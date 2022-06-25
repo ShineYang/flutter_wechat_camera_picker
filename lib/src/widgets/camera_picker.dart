@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:bindings_compatible/bindings_compatible.dart';
 import 'package:camera/camera.dart';
@@ -684,7 +685,7 @@ class CameraPickerState extends State<CameraPicker>
         file: file,
         viewType: CameraPickerViewType.image,
       );
-      if (entity != null) {
+      if (entity != null) {//如果图片预览页面点击了 confirm, 表示使用刚才拍的照片, 则 camera page 要 pop
         Navigator.of(context).pop(entity);
         return;
       }
@@ -997,21 +998,20 @@ class CameraPickerState extends State<CameraPicker>
     BoxConstraints constraints,
   ) {
     return SizedBox(
-      height: 118,
-      child: Row(
-        children: <Widget>[
-          if (controller?.value.isRecordingVideo != true)
-            Expanded(child: backButton(context, constraints))
-          else
-            const Spacer(),
-          Expanded(
-            child: Center(
-              child: MergeSemantics(child: shootingButton(constraints)),
+      child: _buildBottomBlurWidget(Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+        child: Row(
+          children: <Widget>[
+            if (controller?.value.isRecordingVideo != true) Expanded(child: backButton(context, constraints)) else const Spacer(),
+            Expanded(
+              child: Center(
+                child: MergeSemantics(child: shootingButton(constraints)),
+              ),
             ),
-          ),
-          const Spacer(),
-        ],
-      ),
+            const Spacer(),
+          ],
+        ),
+      )),
     );
   }
 
@@ -1023,16 +1023,23 @@ class CameraPickerState extends State<CameraPicker>
       tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       icon: Container(
         alignment: Alignment.center,
-        width: 27,
-        height: 27,
+        width: 30,
+        height: 30,
         decoration: const BoxDecoration(
-          color: Colors.white,
+          color: Colors.black26,
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
+        child: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
       ),
     );
   }
+
+  Widget _buildBottomBlurWidget(Widget child) => ClipRRect(
+      borderRadius: const BorderRadius.only(topLeft: Radius.circular(20.0), topRight: Radius.circular(20.0)),
+      child: Container(
+        color: Colors.black26,
+        child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0), child: child),
+      ));
 
   /// The shooting button.
   /// 拍照按钮
@@ -1065,14 +1072,14 @@ class CameraPickerState extends State<CameraPicker>
                     height: isShootingButtonAnimate
                         ? outerSize.height
                         : innerSize.height,
-                    padding: EdgeInsets.all(isShootingButtonAnimate ? 41 : 11),
+                    padding: EdgeInsets.all(isShootingButtonAnimate ? 41 : 6),
                     decoration: BoxDecoration(
-                      color: theme.canvasColor.withOpacity(0.85),
+                      color: Colors.cyan.withOpacity(0.30),
                       shape: BoxShape.circle,
                     ),
                     child: const DecoratedBox(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.cyan,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -1389,24 +1396,22 @@ class CameraPickerState extends State<CameraPicker>
 
   Widget _contentBuilder(BoxConstraints constraints) {
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Column(
-          children: <Widget>[
-            Semantics(
-              sortKey: const OrdinalSortKey(0),
-              hidden: _controller == null,
-              child: settingsAction(context),
-            ),
-            const Spacer(),
-            ExcludeSemantics(child: tipsTextWidget(_controller)),
-            Semantics(
-              sortKey: const OrdinalSortKey(2),
-              hidden: _controller == null,
-              child: shootingActions(context, _controller, constraints),
-            ),
-          ],
-        ),
+      bottom: false,
+      child: Column(
+        children: <Widget>[
+          Semantics(
+            sortKey: const OrdinalSortKey(0),
+            hidden: _controller == null,
+            child: settingsAction(context),
+          ),
+          const Spacer(),
+          ExcludeSemantics(child: tipsTextWidget(_controller)),
+          Semantics(
+            sortKey: const OrdinalSortKey(2),
+            hidden: _controller == null,
+            child: shootingActions(context, _controller, constraints),
+          ),
+        ],
       ),
     );
   }
