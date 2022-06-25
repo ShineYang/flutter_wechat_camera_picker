@@ -674,6 +674,8 @@ class CameraPickerState extends State<CameraPicker>
           _controller = null;
         });
       });
+
+      //如果配置了拍照回调 则将不显示内置的预览页面
       final bool? isCapturedFileHandled = config.onXFileCaptured?.call(
         file,
         CameraPickerViewType.image,
@@ -910,7 +912,8 @@ class CameraPickerState extends State<CameraPicker>
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
             children: <Widget>[
-              if (cameras.length > 1) switchCamerasButton,
+              //暂不显示反转摄像头
+              // if (cameras.length > 1) switchCamerasButton,
               const Spacer(),
               switchFlashesButton(v),
             ],
@@ -1008,7 +1011,7 @@ class CameraPickerState extends State<CameraPicker>
                 child: MergeSemantics(child: shootingButton(constraints)),
               ),
             ),
-            const Spacer(),
+            Expanded(child: albumButton(context, constraints))
           ],
         ),
       )),
@@ -1023,8 +1026,8 @@ class CameraPickerState extends State<CameraPicker>
       tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       icon: Container(
         alignment: Alignment.center,
-        width: 30,
-        height: 30,
+        width: 32,
+        height: 32,
         decoration: const BoxDecoration(
           color: Colors.black26,
           shape: BoxShape.circle,
@@ -1044,8 +1047,8 @@ class CameraPickerState extends State<CameraPicker>
   /// The shooting button.
   /// 拍照按钮
   Widget shootingButton(BoxConstraints constraints) {
-    const Size outerSize = Size.square(115);
-    const Size innerSize = Size.square(82);
+    const Size outerSize = Size.square(92);
+    const Size innerSize = Size.square(64);
     return Semantics(
       label: _textDelegate.sActionShootingButtonTooltip,
       onTap: onTap,
@@ -1101,6 +1104,16 @@ class CameraPickerState extends State<CameraPicker>
           ),
         ),
       ),
+    );
+  }
+
+  /// The back button near to the [shootingButton].
+  /// 靠近拍照键的相册键
+  Widget albumButton(BuildContext context, BoxConstraints constraints) {
+    return IconButton(
+      onPressed: config.onAlbumClick,
+      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+      icon: const Icon(Icons.add_photo_alternate_outlined, color: Colors.white, size: 26,),
     );
   }
 

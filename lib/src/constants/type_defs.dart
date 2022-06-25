@@ -119,3 +119,7 @@ typedef PreviewTransformBuilder = Widget? Function(
 ///  * 实现了该方法且返回 `true` 后，默认的预览页面不会再出现。
 /// {@endtemplate}
 typedef XFileCapturedCallback = bool Function(XFile, CameraPickerViewType);
+
+/// 点击相册按钮回调
+/// {@endtemplate}
+typedef OnClickAlbumButton = void Function();

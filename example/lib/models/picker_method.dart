@@ -13,7 +13,20 @@ List<PickMethod> get pickMethods {
       icon: '📷',
       name: 'Taking photos',
       description: 'Use cameras only to take photos.',
-      method: (BuildContext context) => CameraPicker.pickFromCamera(context),
+      method: (BuildContext context) => CameraPicker.pickFromCamera(
+        context,
+        pickerConfig: CameraPickerConfig(
+          onAlbumClick: () {
+            print('=========> 点击了相册');
+          },
+          onXFileCaptured: (file, type){
+            print('=========> ${file.name}');
+            //消费掉本次拍照回调事件
+            Navigator.of(context).pop();
+            return true;
+          }
+        ),
+      ),
     ),
     PickMethod(
       icon: '📹',
