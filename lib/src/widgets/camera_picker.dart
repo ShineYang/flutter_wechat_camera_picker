@@ -561,7 +561,7 @@ class CameraPickerState extends State<CameraPicker>
         file,
         CameraPickerViewType.image,
       );
-      //_controller?.pausePreview();
+      _controller?.pausePreview();
     } catch (e) {
       realDebugPrint('Error when preview the captured file: $e');
       handleErrorWithHandler(e, config.onError);
