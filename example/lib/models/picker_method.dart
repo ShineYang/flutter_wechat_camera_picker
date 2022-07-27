@@ -22,7 +22,7 @@ List<PickMethod> get pickMethods {
           onXFileCaptured: (file, type){
             print('=========> ${file.name}');
             //消费掉本次拍照回调事件
-            Navigator.of(context).pop();
+            //Navigator.of(context).pop();
             return true;
           }
         ),

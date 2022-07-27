@@ -668,12 +668,12 @@ class CameraPickerState extends State<CameraPicker>
     try {
       final XFile file = await controller.takePicture();
       // Delay disposing the controller to hold the preview.
-      Future<void>.delayed(const Duration(milliseconds: 500), () {
-        _controller?.dispose();
-        safeSetState(() {
-          _controller = null;
-        });
-      });
+      // Future<void>.delayed(const Duration(milliseconds: 500), () {
+      //   _controller?.dispose();
+      //   safeSetState(() {
+      //     _controller = null;
+      //   });
+      // });
 
       //如果配置了拍照回调 则将不显示内置的预览页面
       config.onXFileCaptured?.call(
@@ -691,7 +691,8 @@ class CameraPickerState extends State<CameraPicker>
       //   Navigator.of(context).pop(entity);
       //   return;
       // }
-      initCameras(currentCamera);
+      _controller?.pausePreview();
+      //initCameras(currentCamera);
       safeSetState(() {});
     } catch (e) {
       realDebugPrint('Error when preview the captured file: $e');
