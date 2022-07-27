@@ -15,18 +15,12 @@ import 'type_defs.dart';
 /// {@endtemplate}
 class CameraPickerConfig {
   const CameraPickerConfig({
-    this.enableRecording = false,
-    this.onlyEnableRecording = false,
-    this.enableTapRecording = false,
-    this.enableAudio = true,
     this.enableSetExposure = true,
     this.enableExposureControlOnPoint = true,
     this.enablePinchToZoom = true,
     this.enablePullToZoomInRecord = true,
     this.enableScaledPreview = true,
     this.shouldDeletePreviewFile = false,
-    this.shouldAutoPreviewVideo = false,
-    this.maximumRecordingDuration = const Duration(seconds: 15),
     this.theme,
     this.textDelegate,
     this.cameraQuarterTurns = 0,
@@ -40,29 +34,7 @@ class CameraPickerConfig {
     this.onError,
     this.onXFileCaptured,
     this.onAlbumClick
-  }) : assert(
-          enableRecording == true || onlyEnableRecording != true,
-          'Recording mode error.',
-        );
-
-  /// Whether the picker can record video.
-  /// 选择器是否可以录像
-  final bool enableRecording;
-
-  /// Whether the picker can record video.
-  /// 选择器是否可以录像
-  final bool onlyEnableRecording;
-
-  /// Whether allow the record can start with single tap.
-  /// 选择器是否可以单击录像
-  ///
-  /// It only works when [onlyEnableRecording] is true.
-  /// 仅在 [onlyEnableRecording] 为 true 时生效。
-  final bool enableTapRecording;
-
-  /// Whether the picker should record audio.
-  /// 选择器录像时是否需要录制声音
-  final bool enableAudio;
+  });
 
   /// Whether users can set the exposure point by tapping.
   /// 用户是否可以在界面上通过点击设定曝光点
@@ -89,19 +61,6 @@ class CameraPickerConfig {
   /// 返回页面时是否删除预览文件
   /// {@endtemplate}
   final bool shouldDeletePreviewFile;
-
-  /// {@template wechat_camera_picker.shouldAutoPreviewVideo}
-  /// Whether the video should be played instantly in the preview.
-  /// 在预览时是否直接播放视频
-  /// {@endtemplate}
-  final bool shouldAutoPreviewVideo;
-
-  /// The maximum duration of the video recording process.
-  /// 录制视频最长时长
-  ///
-  /// Defaults to 15 seconds, allow `null` for unrestricted video recording.
-  /// 默认为 15 秒，可以使用 `null` 来设置无限制的视频录制
-  final Duration? maximumRecordingDuration;
 
   /// Theme data for the picker.
   /// 选择器的主题

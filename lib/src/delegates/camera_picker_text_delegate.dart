@@ -41,18 +41,6 @@ class CameraPickerTextDelegate {
   /// 拍摄前确认按钮上方的提示文字
   String get shootingTips => '轻触拍照';
 
-  /// Tips with recording above the shooting button before shooting.
-  /// 拍摄前确认按钮上方的提示文字（带录像）
-  String get shootingWithRecordingTips => '轻触拍照，长按摄像';
-
-  /// Tips with only recording above the shooting button before shooting.
-  /// 拍摄前确认按钮上方的提示文字（仅录像）
-  String get shootingOnlyRecordingTips => '长按摄像';
-
-  /// Tips with tap recording above the shooting button before shooting.
-  /// 拍摄前确认按钮上方的提示文字（点击录像）
-  String get shootingTapRecordingTips => '轻触摄像';
-
   /// Load failed string for item.
   /// 资源加载失败时的字段
   String get loadFailed => '加载失败';
@@ -65,13 +53,9 @@ class CameraPickerTextDelegate {
 
   String get sActionPreviewHint => '预览';
 
-  String get sActionRecordHint => '录像';
-
   String get sActionShootHint => '拍照';
 
   String get sActionShootingButtonTooltip => '拍照按钮';
-
-  String get sActionStopRecordingHint => '停止录像';
 
   String sCameraLensDirectionLabel(CameraLensDirection value) {
     switch (value) {
@@ -129,16 +113,6 @@ class EnglishCameraPickerTextDelegate extends CameraPickerTextDelegate {
   String get shootingTips => 'Tap to take photo.';
 
   @override
-  String get shootingWithRecordingTips =>
-      'Tap to take photo. Long press to record video.';
-
-  @override
-  String get shootingOnlyRecordingTips => 'Long press to record video.';
-
-  @override
-  String get shootingTapRecordingTips => 'Tap to record video.';
-
-  @override
   String get loadFailed => 'Load failed';
 
   @override
@@ -148,16 +122,10 @@ class EnglishCameraPickerTextDelegate extends CameraPickerTextDelegate {
   String get sActionPreviewHint => 'preview';
 
   @override
-  String get sActionRecordHint => 'record';
-
-  @override
   String get sActionShootHint => 'take picture';
 
   @override
   String get sActionShootingButtonTooltip => 'shooting button';
-
-  @override
-  String get sActionStopRecordingHint => 'stop recording';
 
   @override
   String sCameraLensDirectionLabel(CameraLensDirection value) => value.name;

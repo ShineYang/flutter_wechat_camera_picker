@@ -23,14 +23,12 @@ import '../constants/styles.dart';
 import '../delegates/camera_picker_text_delegate.dart';
 import '../internals/extensions.dart';
 import '../internals/methods.dart';
-import '../widgets/circular_progress_bar.dart';
-
-import 'camera_picker_page_route.dart';
-import 'camera_picker_viewer.dart';
 import 'exposure_point_widget.dart';
 
 const Color _lockedColor = Colors.amber;
 const Duration _kDuration = Duration(milliseconds: 300);
+//初始化完成时的回调
+typedef CameraCreatedCallback = void Function(CameraController);
 
 /// Create a camera picker integrate with [CameraDescription].
 /// 通过 [CameraDescription] 整合的拍照选择
@@ -40,36 +38,15 @@ const Duration _kDuration = Duration(milliseconds: 300);
 class CameraPicker extends StatefulWidget {
   CameraPicker({
     Key? key,
-    this.pickerConfig = const CameraPickerConfig(),
+    required this.pickerConfig,
+    required this.onCameraCreated,
     Locale? locale,
   }) : super(key: key) {
     Constants.textDelegate =
         pickerConfig.textDelegate ?? cameraPickerTextDelegateFromLocale(locale);
   }
-
   final CameraPickerConfig pickerConfig;
-
-  /// Static method to create [AssetEntity] through camera.
-  /// 通过相机创建 [AssetEntity] 的静态方法
-  static Future<AssetEntity?> pickFromCamera(
-    BuildContext context, {
-    CameraPickerConfig pickerConfig = const CameraPickerConfig(),
-    bool useRootNavigator = true,
-    CameraPickerPageRouteBuilder<AssetEntity>? pageRouteBuilder,
-    Locale? locale,
-  }) {
-    final Widget picker = CameraPicker(
-      pickerConfig: pickerConfig,
-      locale: locale ?? Localizations.maybeLocaleOf(context),
-    );
-    return Navigator.of(
-      context,
-      rootNavigator: useRootNavigator,
-    ).push<AssetEntity>(
-      pageRouteBuilder?.call(picker) ??
-          CameraPickerPageRoute<AssetEntity>(builder: (_) => picker),
-    );
-  }
+  final CameraCreatedCallback onCameraCreated;
 
   /// Build a dark theme according to the theme color.
   /// 通过主题色构建一个默认的暗黑主题
@@ -122,18 +99,10 @@ class CameraPicker extends StatefulWidget {
 
 class CameraPickerState extends State<CameraPicker>
     with WidgetsBindingObserver {
-  /// The [Duration] for record detection. (200ms)
-  /// 检测是否开始录制的时长 (200毫秒)
-  final Duration recordDetectDuration = const Duration(milliseconds: 200);
-
   /// The last exposure point offset on the screen.
   /// 最后一次手动聚焦的点坐标
   final ValueNotifier<Offset?> _lastExposurePoint =
       ValueNotifier<Offset?>(null);
-
-  /// The last pressed position on the shooting button before starts recording.
-  /// 在开始录像前，最后一次在拍照按钮按下的位置
-  Offset? _lastShootingButtonPressedPosition;
 
   final ValueNotifier<bool> _isExposureModeDisplays =
       ValueNotifier<bool>(false);
@@ -173,65 +142,16 @@ class CameraPickerState extends State<CameraPicker>
   /// 当前相机的索引。默认为0
   int currentCameraIndex = 0;
 
-  /// Whether the [shootingButton] should animate according to the gesture.
-  /// 拍照按钮是否需要执行动画
-  ///
-  /// This happens when the [shootingButton] is being long pressed.
-  /// It will animate for video recording state.
-  /// 当长按拍照按钮时，会进入准备录制视频的状态，此时需要执行动画。
-  bool isShootingButtonAnimate = false;
-
   /// The [Timer] for keep the [_lastExposurePoint] displays.
   /// 用于控制上次手动聚焦点显示的计时器
   Timer? _exposurePointDisplayTimer;
 
   Timer? _exposureModeDisplayTimer;
 
-  /// The [Timer] for record start detection.
-  /// 用于检测是否开始录制的计时器
-  ///
-  /// When the [shootingButton] started animate, this [Timer] will start
-  /// at the same time. When the time is more than [recordDetectDuration],
-  /// which means we should start recoding, the timer finished.
-  /// 当拍摄按钮开始执行动画时，定时器会同时启动。时长超过检测时长时，定时器完成。
-  Timer? _recordDetectTimer;
-
-  /// The [Timer] for record countdown.
-  /// 用于录制视频倒计时的计时器
-  ///
-  /// Stop record When the record time reached the [maximumRecordingDuration].
-  /// However, if there's no limitation on record time, this will be useless.
-  /// 当录像时间达到了最大时长，将通过定时器停止录像。
-  /// 但如果录像时间没有限制，定时器将不会起作用。
-  Timer? _recordCountdownTimer;
-
   ////////////////////////////////////////////////////////////////////////////
   ////////////////////////////// Global Getters //////////////////////////////
   ////////////////////////////////////////////////////////////////////////////
   CameraPickerConfig get config => widget.pickerConfig;
-
-  bool get enableRecording => config.enableRecording;
-
-  bool get onlyEnableRecording => enableRecording && config.onlyEnableRecording;
-
-  bool get enableTapRecording =>
-      onlyEnableRecording && config.enableTapRecording;
-
-  /// No audio integration required when it's only for camera.
-  /// 在仅允许拍照时不需要启用音频
-  bool get enableAudio => enableRecording && config.enableAudio;
-
-  /// Whether the picker needs to prepare for video recording on iOS.
-  /// 是否需要为 iOS 的录制视频执行准备操作
-  bool get shouldPrepareForVideoRecording =>
-      enableRecording && enableAudio && Platform.isIOS;
-
-  bool get enablePullToZoomInRecord =>
-      enableRecording && config.enablePullToZoomInRecord;
-
-  /// Whether the recording restricted to a specific duration.
-  /// 录像是否有限制的时长
-  bool get isRecordingRestricted => config.maximumRecordingDuration != null;
 
   /// A getter to the current [CameraDescription].
   /// 获取当前相机实例
@@ -275,8 +195,6 @@ class CameraPickerState extends State<CameraPicker>
     _isExposureModeDisplays.dispose();
     _exposurePointDisplayTimer?.cancel();
     _exposureModeDisplayTimer?.cancel();
-    _recordDetectTimer?.cancel();
-    _recordCountdownTimer?.cancel();
     super.dispose();
   }
 
@@ -378,7 +296,7 @@ class CameraPickerState extends State<CameraPicker>
       final CameraController newController = CameraController(
         cameraDescription ?? cameras[index],
         config.resolutionPreset,
-        enableAudio: enableAudio,
+        enableAudio: false,
         imageFormatGroup: config.imageFormatGroup,
       );
 
@@ -387,15 +305,6 @@ class CameraPickerState extends State<CameraPicker>
         await newController.initialize();
         stopwatch.stop();
         realDebugPrint("${stopwatch.elapsed} for controller's initialization.");
-        // Call recording preparation first.
-        if (shouldPrepareForVideoRecording) {
-          stopwatch
-            ..reset()
-            ..start();
-          await newController.prepareForVideoRecording();
-          stopwatch.stop();
-          realDebugPrint("${stopwatch.elapsed} for recording's preparation.");
-        }
         // Then call other asynchronous methods.
         stopwatch
           ..reset()
@@ -426,6 +335,7 @@ class CameraPickerState extends State<CameraPicker>
         stopwatch.stop();
         realDebugPrint("${stopwatch.elapsed} for config's update.");
         _controller = newController;
+        widget.onCameraCreated.call(_controller!);
       } catch (e, s) {
         handleErrorWithHandler(e, config.onError, s: s);
       } finally {
@@ -468,8 +378,10 @@ class CameraPickerState extends State<CameraPicker>
       case FlashMode.auto:
         newFlashMode = FlashMode.always;
         break;
-      case FlashMode.always:
       case FlashMode.torch:
+        newFlashMode = FlashMode.off;
+        break;
+      case FlashMode.always:
         newFlashMode = FlashMode.off;
         break;
     }
@@ -482,9 +394,6 @@ class CameraPickerState extends State<CameraPicker>
 
   Future<void> zoom(double scale) async {
     if (_maxAvailableZoom == _minAvailableZoom) {
-      return;
-    }
-    if (_recordDetectTimer?.isActive ?? false) {
       return;
     }
     final double zoom = (_baseZoom * scale).clamp(
@@ -630,25 +539,6 @@ class CameraPickerState extends State<CameraPicker>
     _restartPointDisplayTimer();
   }
 
-  /// Update the scale value while the user is shooting.
-  /// 用户在录制时通过滑动更新缩放
-  void onShootingButtonMove(
-    PointerMoveEvent event,
-    BoxConstraints constraints,
-  ) {
-    _lastShootingButtonPressedPosition ??= event.position;
-    if (controller.value.isRecordingVideo) {
-      // First calculate relative offset.
-      final Offset offset =
-          event.position - _lastShootingButtonPressedPosition!;
-      // Then turn negative,
-      // multiply double with 10 * 1.5 - 1 = 14,
-      // plus 1 to ensure always scale.
-      final double scale = offset.dy / constraints.maxHeight * -14 + 1;
-      zoom(scale);
-    }
-  }
-
   /// The method to take a picture.
   /// 拍照方法
   ///
@@ -667,164 +557,15 @@ class CameraPickerState extends State<CameraPicker>
     }
     try {
       final XFile file = await controller.takePicture();
-      // Delay disposing the controller to hold the preview.
-      // Future<void>.delayed(const Duration(milliseconds: 500), () {
-      //   _controller?.dispose();
-      //   safeSetState(() {
-      //     _controller = null;
-      //   });
-      // });
-
-      //如果配置了拍照回调 则将不显示内置的预览页面
       config.onXFileCaptured?.call(
         file,
         CameraPickerViewType.image,
       );
-      // if (isCapturedFileHandled ?? false) {
-      //   return;
-      // }
-      // final AssetEntity? entity = await _pushToViewer(
-      //   file: file,
-      //   viewType: CameraPickerViewType.image,
-      // );
-      // if (entity != null) {//如果图片预览页面点击了 confirm, 表示使用刚才拍的照片, 则 camera page 要 pop
-      //   Navigator.of(context).pop(entity);
-      //   return;
-      // }
-      _controller?.pausePreview();
-      //initCameras(currentCamera);
-      safeSetState(() {});
+      //_controller?.pausePreview();
     } catch (e) {
       realDebugPrint('Error when preview the captured file: $e');
       handleErrorWithHandler(e, config.onError);
     }
-  }
-
-  /// When the [shootingButton]'s `onLongPress` called, the [_recordDetectTimer]
-  /// will be initialized to achieve press time detection. If the duration
-  /// reached to same as [recordDetectDuration], and the timer still active,
-  /// start recording video.
-  /// 当 [shootingButton] 触发了长按，初始化一个定时器来实现时间检测。如果长按时间
-  /// 达到了 [recordDetectDuration] 且定时器未被销毁，则开始录制视频。
-  void recordDetection() {
-    _recordDetectTimer = Timer(recordDetectDuration, () {
-      startRecordingVideo();
-      safeSetState(() {});
-    });
-    setState(() {
-      isShootingButtonAnimate = true;
-    });
-  }
-
-  /// This will be given to the [Listener] in the [shootingButton]. When it's
-  /// called, which means no more pressing on the button, cancel the timer and
-  /// reset the status.
-  /// 这个方法会赋值给 [shootingButton] 中的 [Listener]。当按钮释放了点击后，定时器
-  /// 将被取消，并且状态会重置。
-  void recordDetectionCancel(PointerUpEvent event) {
-    _recordDetectTimer?.cancel();
-    if (isShootingButtonAnimate) {
-      safeSetState(() {
-        isShootingButtonAnimate = false;
-      });
-    }
-    if (controller.value.isRecordingVideo) {
-      _lastShootingButtonPressedPosition = null;
-      safeSetState(() {});
-      stopRecordingVideo();
-    }
-  }
-
-  /// Set record file path and start recording.
-  /// 设置拍摄文件路径并开始录制视频
-  Future<void> startRecordingVideo() async {
-    if (controller.value.isRecordingVideo) {
-      return;
-    }
-    try {
-      await controller.startVideoRecording();
-      if (isRecordingRestricted) {
-        _recordCountdownTimer = Timer(config.maximumRecordingDuration!, () {
-          stopRecordingVideo();
-        });
-      }
-    } catch (e, s) {
-      realDebugPrint('Error when start recording video: $e');
-      if (!controller.value.isRecordingVideo) {
-        handleErrorWithHandler(e, config.onError, s: s);
-        return;
-      }
-      try {
-        await controller.stopVideoRecording();
-      } catch (e, s) {
-        realDebugPrint(
-          'Error when stop recording video after an error start: $e',
-        );
-        _recordCountdownTimer?.cancel();
-        isShootingButtonAnimate = false;
-        handleErrorWithHandler(e, config.onError, s: s);
-      }
-    } finally {
-      safeSetState(() {});
-    }
-  }
-
-  /// Stop the recording process.
-  /// 停止录制视频
-  Future<void> stopRecordingVideo() async {
-    void _handleError() {
-      _recordCountdownTimer?.cancel();
-      isShootingButtonAnimate = false;
-      safeSetState(() {});
-    }
-
-    if (!controller.value.isRecordingVideo) {
-      _handleError();
-      return;
-    }
-    try {
-      final XFile file = await controller.stopVideoRecording();
-      final bool? isCapturedFileHandled = config.onXFileCaptured?.call(
-        file,
-        CameraPickerViewType.video,
-      );
-      if (isCapturedFileHandled ?? false) {
-        return;
-      }
-      final AssetEntity? entity = await _pushToViewer(
-        file: file,
-        viewType: CameraPickerViewType.video,
-      );
-      if (entity != null) {
-        Navigator.of(context).pop(entity);
-      }
-    } catch (e, s) {
-      realDebugPrint('Error when stop recording video: $e');
-      realDebugPrint('Try to initialize a new CameraController...');
-      initCameras();
-      _handleError();
-      handleErrorWithHandler(e, config.onError, s: s);
-    } finally {
-      isShootingButtonAnimate = false;
-      safeSetState(() {});
-    }
-  }
-
-  Future<AssetEntity?> _pushToViewer({
-    required XFile file,
-    required CameraPickerViewType viewType,
-  }) {
-    return CameraPickerViewer.pushToViewer(
-      context,
-      pickerState: this,
-      pickerType: viewType,
-      previewXFile: file,
-      theme: theme,
-      shouldDeletePreviewFile: config.shouldDeletePreviewFile,
-      shouldAutoPreviewVideo: config.shouldAutoPreviewVideo,
-      onEntitySaving: config.onEntitySaving,
-      onError: config.onError,
-    );
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -834,62 +575,15 @@ class CameraPickerState extends State<CameraPicker>
   ////////////////////////////////////////////////////////////////////////////
 
   PointerUpEventListener? get onPointerUp {
-    if (enableRecording && !enableTapRecording) {
-      return recordDetectionCancel;
-    }
     return null;
   }
 
   PointerMoveEventListener? onPointerMove(BoxConstraints c) {
-    if (enablePullToZoomInRecord) {
-      return (PointerMoveEvent e) => onShootingButtonMove(e, c);
-    }
     return null;
   }
 
   GestureTapCallback? get onTap {
-    if (enableTapRecording) {
-      if (_controller?.value.isRecordingVideo ?? false) {
-        return stopRecordingVideo;
-      }
-      return () {
-        startRecordingVideo();
-        setState(() {
-          isShootingButtonAnimate = true;
-        });
-      };
-    }
-    if (!onlyEnableRecording) {
-      return takePicture;
-    }
-    return null;
-  }
-
-  String? get onTapHint {
-    if (enableTapRecording) {
-      if (_controller?.value.isRecordingVideo ?? false) {
-        return _textDelegate.sActionStopRecordingHint;
-      }
-      return _textDelegate.sActionRecordHint;
-    }
-    if (!onlyEnableRecording) {
-      return _textDelegate.sActionShootHint;
-    }
-    return null;
-  }
-
-  GestureLongPressCallback? get onLongPress {
-    if (enableRecording && !enableTapRecording) {
-      return recordDetection;
-    }
-    return null;
-  }
-
-  String? get onLongPressHint {
-    if (enableRecording && !enableTapRecording) {
-      return _textDelegate.sActionRecordHint;
-    }
-    return null;
+    return takePicture;
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -967,27 +661,9 @@ class CameraPickerState extends State<CameraPicker>
   /// Text widget for shooting tips.
   /// 拍摄的提示文字
   Widget tipsTextWidget(CameraController? controller) {
-    final String tips;
-    if (config.enableRecording) {
-      if (config.onlyEnableRecording) {
-        if (config.enableTapRecording) {
-          tips = _textDelegate.shootingTapRecordingTips;
-        } else {
-          tips = _textDelegate.shootingOnlyRecordingTips;
-        }
-      } else {
-        tips = _textDelegate.shootingWithRecordingTips;
-      }
-    } else {
-      tips = _textDelegate.shootingTips;
-    }
-    return AnimatedOpacity(
-      duration: recordDetectDuration,
-      opacity: controller?.value.isRecordingVideo ?? false ? 0 : 1,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Text(tips, style: const TextStyle(fontSize: 15)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Text(_textDelegate.shootingTips, style: const TextStyle(fontSize: 15)),
     );
   }
 
@@ -1052,54 +728,29 @@ class CameraPickerState extends State<CameraPicker>
     return Semantics(
       label: _textDelegate.sActionShootingButtonTooltip,
       onTap: onTap,
-      onTapHint: onTapHint,
-      onLongPress: onLongPress,
-      onLongPressHint: onLongPressHint,
       child: Listener(
         behavior: HitTestBehavior.opaque,
-        onPointerUp: onPointerUp,
         onPointerMove: onPointerMove(constraints),
         child: GestureDetector(
           onTap: onTap,
-          onLongPress: onLongPress,
           child: SizedBox.fromSize(
             size: outerSize,
-            child: Stack(
-              children: <Widget>[
-                Center(
-                  child: AnimatedContainer(
-                    duration: kThemeChangeDuration,
-                    width: isShootingButtonAnimate
-                        ? outerSize.width
-                        : innerSize.width,
-                    height: isShootingButtonAnimate
-                        ? outerSize.height
-                        : innerSize.height,
-                    padding: EdgeInsets.all(isShootingButtonAnimate ? 41 : 6),
-                    decoration: BoxDecoration(
-                      color: Colors.cyan.withOpacity(0.30),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.cyan,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+            child: Center(
+              child: Container(
+                width: innerSize.width,
+                height:  innerSize.height,
+                padding: EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.cyan.withOpacity(0.30),
+                  shape: BoxShape.circle,
+                ),
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.cyan,
+                    shape: BoxShape.circle,
                   ),
                 ),
-                _initializeWrapper(
-                  isInitialized: () =>
-                      (_controller?.value.isRecordingVideo ?? false) &&
-                      isRecordingRestricted,
-                  builder: (_, __) => CircularProgressBar(
-                    duration: config.maximumRecordingDuration!,
-                    outerRadius: outerSize.width,
-                    ringsColor: theme.indicatorColor,
-                    ringsWidth: 2,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
