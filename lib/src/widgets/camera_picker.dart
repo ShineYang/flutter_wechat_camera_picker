@@ -676,21 +676,21 @@ class CameraPickerState extends State<CameraPicker>
       });
 
       //如果配置了拍照回调 则将不显示内置的预览页面
-      final bool? isCapturedFileHandled = config.onXFileCaptured?.call(
+      config.onXFileCaptured?.call(
         file,
         CameraPickerViewType.image,
       );
-      if (isCapturedFileHandled ?? false) {
-        return;
-      }
-      final AssetEntity? entity = await _pushToViewer(
-        file: file,
-        viewType: CameraPickerViewType.image,
-      );
-      if (entity != null) {//如果图片预览页面点击了 confirm, 表示使用刚才拍的照片, 则 camera page 要 pop
-        Navigator.of(context).pop(entity);
-        return;
-      }
+      // if (isCapturedFileHandled ?? false) {
+      //   return;
+      // }
+      // final AssetEntity? entity = await _pushToViewer(
+      //   file: file,
+      //   viewType: CameraPickerViewType.image,
+      // );
+      // if (entity != null) {//如果图片预览页面点击了 confirm, 表示使用刚才拍的照片, 则 camera page 要 pop
+      //   Navigator.of(context).pop(entity);
+      //   return;
+      // }
       initCameras(currentCamera);
       safeSetState(() {});
     } catch (e) {
@@ -1029,16 +1029,15 @@ class CameraPickerState extends State<CameraPicker>
         width: 32,
         height: 32,
         decoration: const BoxDecoration(
-          color: Colors.black26,
+          color: Colors.white12,
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+        child: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white),
       ),
     );
   }
 
   Widget _buildBottomBlurWidget(Widget child) => ClipRRect(
-      borderRadius: const BorderRadius.only(topLeft: Radius.circular(20.0), topRight: Radius.circular(20.0)),
       child: Container(
         color: Colors.black26,
         child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0), child: child),
