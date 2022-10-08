@@ -371,19 +371,11 @@ class CameraPickerState extends State<CameraPicker>
   /// 切换闪光灯模式的方法
   Future<void> switchFlashesMode() async {
     final FlashMode newFlashMode;
-    switch (controller.value.flashMode) {
-      case FlashMode.off:
-        newFlashMode = FlashMode.auto;
-        break;
-      case FlashMode.auto:
-        newFlashMode = FlashMode.always;
-        break;
-      case FlashMode.torch:
-        newFlashMode = FlashMode.off;
-        break;
-      case FlashMode.always:
-        newFlashMode = FlashMode.off;
-        break;
+
+    if(controller.value.flashMode == FlashMode.off){
+      newFlashMode = FlashMode.always;
+    }else {
+      newFlashMode = FlashMode.off;
     }
     try {
       await controller.setFlashMode(newFlashMode);
@@ -639,17 +631,10 @@ class CameraPickerState extends State<CameraPicker>
   /// 切换闪光灯模式的按钮
   Widget switchFlashesButton(CameraValue value) {
     IconData icon;
-    switch (value.flashMode) {
-      case FlashMode.off:
-        icon = Icons.flash_off;
-        break;
-      case FlashMode.auto:
-        icon = Icons.flash_auto;
-        break;
-      case FlashMode.always:
-      case FlashMode.torch:
-        icon = Icons.flash_on;
-        break;
+    if(value.flashMode == FlashMode.off){
+      icon = Icons.flash_off;
+    }else{
+      icon = Icons.flash_auto;
     }
     return IconButton(
       onPressed: switchFlashesMode,
@@ -663,7 +648,12 @@ class CameraPickerState extends State<CameraPicker>
   Widget tipsTextWidget(CameraController? controller) {
     return Padding(
       padding: const EdgeInsets.all(20),
-      child: Text(_textDelegate.shootingTips, style: const TextStyle(fontSize: 15)),
+      child: Column(
+        children: [
+          Text(_textDelegate.shootingTips, style: const TextStyle(fontSize: 15, color: Colors.white)),
+          Text(_textDelegate.shootingTipsDesc, style: const TextStyle(fontSize: 12, color: Colors.white)),
+        ],
+      ),
     );
   }
 
@@ -723,8 +713,8 @@ class CameraPickerState extends State<CameraPicker>
   /// The shooting button.
   /// 拍照按钮
   Widget shootingButton(BoxConstraints constraints) {
-    const Size outerSize = Size.square(92);
-    const Size innerSize = Size.square(64);
+    const Size outerSize = Size.square(88);
+    const Size innerSize = Size.square(72);
     return Semantics(
       label: _textDelegate.sActionShootingButtonTooltip,
       onTap: onTap,
@@ -739,14 +729,14 @@ class CameraPickerState extends State<CameraPicker>
               child: Container(
                 width: innerSize.width,
                 height:  innerSize.height,
-                padding: EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.cyan.withOpacity(0.30),
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: Color(0x4D71C9A3),
                   shape: BoxShape.circle,
                 ),
                 child: const DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.cyan,
+                    color: Color(0xFF67B694),
                     shape: BoxShape.circle,
                   ),
                 ),

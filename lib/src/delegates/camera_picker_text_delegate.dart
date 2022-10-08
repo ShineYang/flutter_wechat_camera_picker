@@ -39,7 +39,8 @@ class CameraPickerTextDelegate {
 
   /// Tips above the shooting button before shooting.
   /// 拍摄前确认按钮上方的提示文字
-  String get shootingTips => '轻触拍照';
+  String get shootingTips => '拍摄扫描对象';
+  String get shootingTipsDesc => '请尽量拍摄完整清晰的图像';
 
   /// Load failed string for item.
   /// 资源加载失败时的字段
