@@ -650,8 +650,8 @@ class CameraPickerState extends State<CameraPicker>
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          Text(_textDelegate.shootingTips, style: const TextStyle(fontSize: 15, color: Colors.white)),
-          Text(_textDelegate.shootingTipsDesc, style: const TextStyle(fontSize: 12, color: Colors.white)),
+          Text(_textDelegate.shootingTips, style: const TextStyle(fontSize: 12, color: Colors.white)),
+          Text(_textDelegate.shootingTipsDesc, style: const TextStyle(fontSize: 10, color: Colors.white)),
         ],
       ),
     );
@@ -669,7 +669,7 @@ class CameraPickerState extends State<CameraPicker>
   ) {
     return SizedBox(
       child: _buildBottomBlurWidget(Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+        padding: const EdgeInsets.only(bottom: 20),
         child: Row(
           children: <Widget>[
             if (controller?.value.isRecordingVideo != true) Expanded(child: backButton(context, constraints)) else const Spacer(),
