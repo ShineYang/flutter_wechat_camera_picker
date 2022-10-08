@@ -172,14 +172,6 @@ class CameraPickerState extends State<CameraPicker>
   void initState() {
     super.initState();
     useWidgetsBinding().addObserver(this);
-
-    // TODO(Alex): Currently hide status bar will cause the viewport shaking on Android.
-    /// Hide system status bar automatically when the platform is not Android.
-    /// 在非 Android 设备上自动隐藏状态栏
-    if (!Platform.isAndroid) {
-      SystemChrome.setEnabledSystemUIOverlays(<SystemUiOverlay>[]);
-    }
-
     initCameras();
   }
 
@@ -736,7 +728,7 @@ class CameraPickerState extends State<CameraPicker>
                 ),
                 child: const DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Color(0xFF4EA07D),
+                    color: Color(0xFF6BB193),
                     shape: BoxShape.circle,
                   ),
                 ),
