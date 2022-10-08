@@ -713,8 +713,8 @@ class CameraPickerState extends State<CameraPicker>
   /// The shooting button.
   /// 拍照按钮
   Widget shootingButton(BoxConstraints constraints) {
-    const Size outerSize = Size.square(88);
-    const Size innerSize = Size.square(72);
+    const Size outerSize = Size.square(84);
+    const Size innerSize = Size.square(68);
     return Semantics(
       label: _textDelegate.sActionShootingButtonTooltip,
       onTap: onTap,
@@ -736,7 +736,7 @@ class CameraPickerState extends State<CameraPicker>
                 ),
                 child: const DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Color(0xFF67B694),
+                    color: Color(0xFF4EA07D),
                     shape: BoxShape.circle,
                   ),
                 ),
